@@ -81,7 +81,7 @@ def main():
     ws_thread.start()
     
     while True:
-        msg = input("Type a message to send: ")
+        msg = input("> ")
         if msg.lower() == "exit":
             break
         if ws.sock and ws.sock.connected:

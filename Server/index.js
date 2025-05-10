@@ -6,6 +6,8 @@ import express from 'express';
 import http from 'http';
 import { WebSocketServer } from 'ws';
 import bodyParser from 'body-parser';
+import { createInterface } from 'readline/promises';
+import { stdin as input, stdout as output } from 'node:process';
 
 import { users, sessions } from './db.js';
 
@@ -100,5 +102,27 @@ wss.on('connection', (ws, req) => {
 server.listen(PORT, () => {
   const ip = getLocalExternalIP();
   console.log(`Server running on http://${ip}:${PORT}`);
-  writeIntoIpFile(ip)
+  writeIntoIpFile(ip);
+  waitForUserInput();
 });
+
+async function waitForUserInput() {
+  const rl = createInterface({ input, output });
+
+  while (true) {
+    const line = await rl.question('> ');
+    const inputText = line.trim();
+
+    if (inputText === 'exit') {
+      console.log('Shutting down server...');
+      rl.close();
+      server.close(() => {
+        console.log('Server closed.');
+        process.exit(0);
+      });
+      break;
+    } else {
+      console.log(`Unrecognized input: ${inputText}`);
+    }
+  }
+}

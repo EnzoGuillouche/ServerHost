@@ -1,5 +1,12 @@
+class User {
+    constructor(name, pword) {
+        this.username = name
+        this.password = pword
+    }
+}
+
 export let users = [
-    { username: "Enzo", password: "MyPassword" },
+    new User("Enzo", "MyPassword"),
 ];
 
 export let sessions = {};
