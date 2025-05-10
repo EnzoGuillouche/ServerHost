@@ -1,3 +1,7 @@
+import os from 'os';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 import express from 'express';
 import http from 'http';
 import { WebSocketServer } from 'ws';
@@ -12,6 +16,35 @@ const wss = new WebSocketServer({ server });
 app.use(bodyParser.json());
 
 const PORT = 3000;
+
+function getLocalExternalIP() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
+  }
+  return 'localhost';
+}
+
+function writeIntoIpFile(ip) {
+  const content = `http://${ip}:${PORT}\n`;
+
+  // Get the directory of the current module
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const filePath = path.join(__dirname, '../server_ip.txt');
+
+  fs.writeFile(filePath, content, (err) => {
+    if (err) {
+      console.error('Failed to write IP to file:', err);
+    } else {
+      console.log('IP address written to server_ip.txt');
+    }
+  });
+}
 
 // Example login route
 app.post('/login', (req, res) => {
@@ -46,7 +79,7 @@ wss.on('connection', (ws, req) => {
       if (user){
         ws.user = user;
         console.log(`Session authenticated for ${user.username}`);
-        ws.send(JSON.stringify( { type:'user_data', data: {welcome: `Hello, ${user.username}` } } ));
+        ws.send(JSON.stringify( { type:'user_data', data: {message: `Hello, ${user.username}` } } ));
       } else {
         ws.send(JSON.stringify( { error: 'Invalid session' }));
         return;
@@ -65,5 +98,7 @@ wss.on('connection', (ws, req) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  const ip = getLocalExternalIP();
+  console.log(`Server running on http://${ip}:${PORT}`);
+  writeIntoIpFile(ip)
 });

@@ -3,9 +3,12 @@ import websocket
 import json
 import threading
 
-# === Configuration ===
-SERVER_IP = "192.168.1.235"  # IP of the server
-PORT = 3000
+with open('../server_ip.txt', 'r') as file:
+    content = file.read().strip()
+
+# Remove the 'http://' prefix for WebSocket
+if content.startswith("http://"):
+    SERVER_IP = content[7:]
 
 # === Login ===
 def login():
@@ -13,7 +16,7 @@ def login():
     password = input("Password: ")
 
     try:
-        res = requests.post(f"http://{SERVER_IP}:{PORT}/login", json={
+        res = requests.post(f"http://{SERVER_IP}/login", json={
             "username": username,
             "password": password
         })
@@ -36,9 +39,9 @@ def on_message(ws, message):
         if 'error' in data:
             print("⚠️ Server error:", data['error'])
         elif data.get('type') == 'user_data':
-            print("📨 User data received:", data['data'])
+            print("User data received:", data['data'])
         else:
-            print("📩 Message:", data)
+            print("Message:", data)
     except Exception as e:
         print("Failed to parse message:", e)
 
@@ -51,7 +54,6 @@ def on_close(ws, close_status_code, close_msg):
 def create_on_open(session_id):
     def on_open(ws):
         def run():
-            print("Sending session ID to server...")
             ws.send(json.dumps({"sessionId": session_id}))
         threading.Thread(target=run).start()
     return on_open
@@ -67,7 +69,7 @@ def main():
         return
 
     ws = websocket.WebSocketApp(
-        f"ws://{SERVER_IP}:{PORT}",
+        f"ws://{SERVER_IP}",
         on_message=on_message,
         on_error=on_error,
         on_close=on_close,
