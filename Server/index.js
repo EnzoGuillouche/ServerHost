@@ -86,12 +86,12 @@ wss.on('connection', (ws, req) => {
         ws.send(JSON.stringify( { error: 'Invalid session' }));
         return;
       }
-    } else if (ws.user && data.message) { 
+    } else if (ws.user && data.message) {
+      // handle different actions here
       console.log(`Message from ${ws.user.username}: ${data.message}`);
     } else {
       ws.send(JSON.stringify({ error: "Unauthorized or unknown message" }));
     }
-
   });
 
   ws.on('close', () => {
