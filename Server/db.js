@@ -1,9 +1,4 @@
-class User {
-    constructor(name, pword) {
-        this.username = name
-        this.password = pword
-    }
-}
+import { User } from "./user.js"
 
 export let users = [
     new User("Enzo", "MyPassword"),

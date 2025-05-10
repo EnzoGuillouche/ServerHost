@@ -12,7 +12,8 @@ if content.startswith("http://"):
 # === Main ===
 def main():
     current_user = login(SERVER_IP)
-    if not current_user.session_id:
+    if current_user == None or not current_user.session_id:
+        del current_user
         return
 
     ws = createWs(SERVER_IP, current_user.session_id)

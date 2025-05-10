@@ -8,6 +8,7 @@ from user import User
 def on_message(ws, message):
     try:
         data = json.loads(message)
+        # Handle server messages
         if 'error' in data:
             print("⚠️ Server error:", data['error'])
         elif data.get('type') == 'user_data':

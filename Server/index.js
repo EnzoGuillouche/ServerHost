@@ -1,24 +1,21 @@
+//#region IMPORTS
 import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import express from 'express';
-import http from 'http';
 import { WebSocketServer } from 'ws';
-import bodyParser from 'body-parser';
 import { createInterface } from 'readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 
 import { users, sessions } from './db.js';
+import { app, server, PORT } from './connection.js';
+//#endregion
 
-const app = express();
-const server = http.createServer(app);
+//#region VARIABLES
 const wss = new WebSocketServer({ server });
+//#endregion
 
-app.use(bodyParser.json());
-
-const PORT = 3000;
-
+//#region SET IP INTO FILE
 function getLocalExternalIP() {
   const interfaces = os.networkInterfaces();
   for (const name of Object.keys(interfaces)) {
@@ -47,20 +44,9 @@ function writeIntoIpFile(ip) {
     }
   });
 }
+//#endregion
 
-// Example login route
-app.post('/login', (req, res) => {
-  const { username, password } = req.body;
-  const user = users.find(u => u.username === username && u.password === password);
-  if (user) {
-    const sessionId = `${Date.now()}-${Math.random()}`;
-    sessions[sessionId] = user;
-    res.json({ success: true, sessionId });
-  } else {
-    res.status(401).json({ success: false, message: 'Invalid credentials' });
-  }
-});
-
+//#region WEB SOCKET
 // WebSocket: on user connection
 wss.on('connection', (ws, req) => {
   console.log('A client connected via WebSocket');
@@ -86,25 +72,31 @@ wss.on('connection', (ws, req) => {
         ws.send(JSON.stringify( { error: 'Invalid session' }));
         return;
       }
+    //#region HANDLE ACTIONS FROM USER
     } else if (ws.user && data.message) {
-      // handle different actions here
       console.log(`Message from ${ws.user.username}: ${data.message}`);
+    //#endregion
     } else {
       ws.send(JSON.stringify({ error: "Unauthorized or unknown message" }));
     }
   });
 
-  ws.on('close', () => {
-    console.log(`Connected closed`);
+  ws.on('close', (ws) => {
+    console.log(`User ${ws.user.username} disconnected`);
   });
 });
+//#endregion
 
+//#region SERVER LISTEN
 server.listen(PORT, () => {
   const ip = getLocalExternalIP();
   console.log(`Server running on http://${ip}:${PORT}`);
   writeIntoIpFile(ip);
   waitForUserInput();
 });
+//#endregion
+
+//#region CONSOLE INPUTS
 
 async function waitForUserInput() {
   const rl = createInterface({ input, output });
@@ -126,3 +118,4 @@ async function waitForUserInput() {
     }
   }
 }
+//#endregion
